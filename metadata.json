@@ -1,0 +1,6 @@
+{
+  "name": "LiftOps SWAN",
+  "description": "CERN SWAN-inspired cloud-native fitness analytics platform combining collaborative notebook computing with DevOps container management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
