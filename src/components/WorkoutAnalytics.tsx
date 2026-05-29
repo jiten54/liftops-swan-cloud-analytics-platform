@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Exercise, WorkoutLog } from "../types";
 import { Search, Plus, ListFilter, Trash, Dumbbell, Calendar, Heart, Award, ArrowUpRight, TrendingUp } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid, AreaChart, Area } from "recharts";
+import { apiRequest } from "../utils/api";
 
 interface WorkoutAnalyticsProps {
   userId: string;
@@ -30,8 +31,7 @@ export default function WorkoutAnalytics({ userId }: WorkoutAnalyticsProps) {
   // Load catalogs and histories
   const fetchCatalogs = async () => {
     try {
-      const res = await fetch(`/api/exercises?search=${search}&category=${selectedCategory === "all" ? "" : selectedCategory}&equipment=${selectedEquipment === "all" ? "" : selectedEquipment}`);
-      const data = await res.json();
+      const data = await apiRequest<Exercise[]>(`/api/exercises?search=${search}&category=${selectedCategory === "all" ? "" : selectedCategory}&equipment=${selectedEquipment === "all" ? "" : selectedEquipment}`);
       setExercises(data);
     } catch (err) {
       console.error(err);
@@ -40,12 +40,10 @@ export default function WorkoutAnalytics({ userId }: WorkoutAnalyticsProps) {
 
   const fetchLogsAndAnalytics = async () => {
     try {
-      const resLogs = await fetch(`/api/workouts/log?userId=${userId}`);
-      const dataLogs = await resLogs.json();
+      const dataLogs = await apiRequest<WorkoutLog[]>(`/api/workouts/log?userId=${userId}`);
       setLogs(dataLogs);
 
-      const resAn = await fetch(`/api/analytics/summary?userId=${userId}`);
-      const dataAn = await resAn.json();
+      const dataAn = await apiRequest<any>(`/api/analytics/summary?userId=${userId}`);
       setAnalyticsData(dataAn);
     } catch (err) {
       console.error(err);
@@ -81,9 +79,8 @@ export default function WorkoutAnalytics({ userId }: WorkoutAnalyticsProps) {
     if (!activeExerciseId) return;
 
     try {
-      const res = await fetch("/api/workouts/log", {
+      await apiRequest("/api/workouts/log", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId,
           date: logDate,
@@ -91,10 +88,8 @@ export default function WorkoutAnalytics({ userId }: WorkoutAnalyticsProps) {
           sets
         })
       });
-      if (res.ok) {
-        setSets([{ reps: 10, weight: 60 }]);
-        fetchLogsAndAnalytics();
-      }
+      setSets([{ reps: 10, weight: 60 }]);
+      fetchLogsAndAnalytics();
     } catch (err) {
       console.error(err);
     }
@@ -105,9 +100,8 @@ export default function WorkoutAnalytics({ userId }: WorkoutAnalyticsProps) {
     if (!newExName) return;
 
     try {
-      const res = await fetch("/api/exercises", {
+      await apiRequest("/api/exercises", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: newExName,
           category: newExCategory,
@@ -115,13 +109,11 @@ export default function WorkoutAnalytics({ userId }: WorkoutAnalyticsProps) {
           description: newExDesc
         })
       });
-      if (res.ok) {
-        setNewExName("");
-        setNewExDesc("");
-        setExSuccess(true);
-        fetchCatalogs();
-        setTimeout(() => setExSuccess(false), 3000);
-      }
+      setNewExName("");
+      setNewExDesc("");
+      setExSuccess(true);
+      fetchCatalogs();
+      setTimeout(() => setExSuccess(false), 3000);
     } catch (err) {
       console.error(err);
     }

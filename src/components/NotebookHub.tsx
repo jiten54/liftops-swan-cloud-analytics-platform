@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Notebook, NotebookCell } from "../types";
 import { Play, Plus, Trash, FileText, Code, CheckCircle, Save, Database, ShieldAlert, Sparkles, AlertCircle } from "lucide-react";
+import { apiRequest } from "../utils/api";
 
 interface NotebookHubProps {
   userId: string;
@@ -17,8 +18,7 @@ export default function NotebookHub({ userId, username }: NotebookHubProps) {
 
   const fetchNotebooks = async () => {
     try {
-      const res = await fetch("/api/notebooks");
-      const data = await res.json();
+      const data = await apiRequest<Notebook[]>("/api/notebooks");
       setNotebooks(data);
       if (data.length > 0 && !selectedNotebook) {
         setSelectedNotebook(data[0]);
@@ -34,8 +34,7 @@ export default function NotebookHub({ userId, username }: NotebookHubProps) {
 
   const selectNotebook = async (id: string) => {
     try {
-      const res = await fetch(`/api/notebooks/${id}`);
-      const data = await res.json();
+      const data = await apiRequest<Notebook>(`/api/notebooks/${id}`);
       setSelectedNotebook(data);
     } catch (err) {
       console.error(err);
@@ -44,16 +43,14 @@ export default function NotebookHub({ userId, username }: NotebookHubProps) {
 
   const handleCreateNotebook = async () => {
     try {
-      const res = await fetch("/api/notebooks", {
+      const data = await apiRequest<Notebook>("/api/notebooks", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: `analysis_routine_${Math.random().toString(36).substring(2, 6)}.ipynb`,
           userId,
           username
         })
       });
-      const data = await res.json();
       setNotebooks([...notebooks, data]);
       setSelectedNotebook(data);
     } catch (err) {
@@ -97,14 +94,11 @@ export default function NotebookHub({ userId, username }: NotebookHubProps) {
     if (!selectedNotebook) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/notebooks/${selectedNotebook.id}/cells`, {
+      await apiRequest(`/api/notebooks/${selectedNotebook.id}/cells`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cells: selectedNotebook.cells })
       });
-      if (res.ok) {
-        setLoading(false);
-      }
+      setLoading(false);
     } catch (err) {
       console.error(err);
       setLoading(false);
@@ -116,12 +110,10 @@ export default function NotebookHub({ userId, username }: NotebookHubProps) {
     setExecutingCellId(cellId);
 
     try {
-      const res = await fetch(`/api/notebooks/${selectedNotebook.id}/cells/${cellId}/execute`, {
+      const data = await apiRequest<any>(`/api/notebooks/${selectedNotebook.id}/cells/${cellId}/execute`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: source })
       });
-      const data = await res.json();
 
       // Check if Gemini execution was active based on signature of output
       if (data.type !== "error" && data.content.includes("Simulated") === false) {

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { AuthUser } from "../types";
 import { Lock, Mail, User, Shield, CheckCircle } from "lucide-react";
+import { apiRequest } from "../utils/api";
 
 interface AuthOverlayProps {
   onLoginSuccess: (user: AuthUser, token: string) => void;
@@ -28,15 +29,10 @@ export default function AuthOverlay({ onLoginSuccess }: AuthOverlayProps) {
       : { email, password };
 
     try {
-      const res = await fetch(endpoint, {
+      const data = await apiRequest<any>(endpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Authentication procedure failed.");
-      }
 
       if (isRegister) {
         setMessage("Account registered successfully! Please log in.");

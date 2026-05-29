@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { ContainerSession } from "../types";
 import { Cpu, Terminal, Play, Square, RefreshCcw, PlusSquare, AlertOctagon, HelpCircle, Network, HardDrive } from "lucide-react";
+import { apiRequest } from "../utils/api";
 
 interface ContainerPodsProps {
   userId: string;
@@ -15,8 +16,7 @@ export default function ContainerPods({ userId, username }: ContainerPodsProps) 
 
   const fetchContainers = async () => {
     try {
-      const res = await fetch("/api/containers");
-      const data = await res.json();
+      const data = await apiRequest<ContainerSession[]>("/api/containers");
       setContainers(data);
     } catch (err) {
       console.error(err);
@@ -32,9 +32,8 @@ export default function ContainerPods({ userId, username }: ContainerPodsProps) 
   const handleCreateContainer = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch("/api/containers", {
+      await apiRequest("/api/containers", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId,
           username,
@@ -42,9 +41,7 @@ export default function ContainerPods({ userId, username }: ContainerPodsProps) 
           memoryLimit
         })
       });
-      if (res.ok) {
-        fetchContainers();
-      }
+      fetchContainers();
     } catch (err) {
       console.error(err);
     }
@@ -53,12 +50,10 @@ export default function ContainerPods({ userId, username }: ContainerPodsProps) 
   const handleContainerAction = async (id: string, action: "start" | "stop" | "restart") => {
     setActionLoading(id + "-" + action);
     try {
-      const res = await fetch(`/api/containers/${id}/${action}`, {
+      await apiRequest(`/api/containers/${id}/${action}`, {
         method: "POST"
       });
-      if (res.ok) {
-        await fetchContainers();
-      }
+      await fetchContainers();
     } catch (err) {
       console.error(err);
     } finally {

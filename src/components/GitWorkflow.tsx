@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { GitRepo } from "../types";
 import { Github, GitBranch, GitCommit, Play, RefreshCw, CheckCircle2, ShieldAlert, Cpu } from "lucide-react";
+import { apiRequest } from "../utils/api";
 
 export default function GitWorkflow() {
   const [repos, setRepos] = useState<GitRepo[]>([]);
@@ -16,15 +17,13 @@ export default function GitWorkflow() {
 
   const fetchGitReposAndCicd = async () => {
     try {
-      const resRepos = await fetch("/api/git/repos");
-      const dataRepos = await resRepos.json();
+      const dataRepos = await apiRequest<GitRepo[]>("/api/git/repos");
       setRepos(dataRepos);
       if (dataRepos.length > 0 && !selectedRepo) {
         setSelectedRepo(dataRepos.find((r: any) => r.connected) || dataRepos[0]);
       }
 
-      const resCicd = await fetch("/api/cicd");
-      const dataCicd = await resCicd.json();
+      const dataCicd = await apiRequest<any>("/api/cicd");
       setCicd(dataCicd);
     } catch (err) {
       console.error(err);
@@ -37,12 +36,10 @@ export default function GitWorkflow() {
 
   const handleConnectRepo = async (id: string) => {
     try {
-      const res = await fetch("/api/git/connect", {
+      const data = await apiRequest<any>("/api/git/connect", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ repoId: id })
       });
-      const data = await res.json();
       setRepos(data.repos);
       const match = data.repos.find((r: any) => r.id === id);
       if (match) setSelectedRepo(match);
@@ -57,20 +54,16 @@ export default function GitWorkflow() {
     setIsCommitting(true);
 
     try {
-      const res = await fetch(`/api/git/${selectedRepo.id}/commit`, {
+      const data = await apiRequest<any>(`/api/git/${selectedRepo.id}/commit`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: commitMessage,
           author: "swanjiten"
         })
       });
-      if (res.ok) {
-        const data = await res.json();
-        setSelectedRepo(data);
-        setCommitMessage("");
-        fetchGitReposAndCicd();
-      }
+      setSelectedRepo(data);
+      setCommitMessage("");
+      fetchGitReposAndCicd();
     } catch (err) {
       console.error(err);
     } finally {
@@ -80,10 +73,8 @@ export default function GitWorkflow() {
 
   const handleTriggerCicd = async () => {
     try {
-      const res = await fetch("/api/cicd/trigger", { method: "POST" });
-      if (res.ok) {
-        setLogPollingActive(true);
-      }
+      await apiRequest("/api/cicd/trigger", { method: "POST" });
+      setLogPollingActive(true);
     } catch (err) {
       console.error(err);
     }
@@ -95,8 +86,7 @@ export default function GitWorkflow() {
     if (logPollingActive || cicd.running) {
       timer = setInterval(async () => {
         try {
-          const res = await fetch("/api/cicd");
-          const data = await res.json();
+          const data = await apiRequest<any>("/api/cicd");
           setCicd(data);
           if (!data.running) {
             setLogPollingActive(false);

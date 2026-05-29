@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { SystemMetrics, PresenceUser } from "../types";
 import { Activity, ShieldCheck, MapPin, Loader2, Eye, Database, Terminal, Cpu, Network, Radio } from "lucide-react";
 import { ResponsiveContainer, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip } from "recharts";
+import { apiRequest } from "../utils/api";
 
 export default function TelemetryDashboard() {
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
@@ -13,8 +14,7 @@ export default function TelemetryDashboard() {
 
   const fetchTelemetry = async () => {
     try {
-      const resMet = await fetch("/api/system/metrics");
-      const dataMet = await resMet.json();
+      const dataMet = await apiRequest<SystemMetrics>("/api/system/metrics");
       setMetrics(dataMet);
 
       // Append to charts history
@@ -25,12 +25,10 @@ export default function TelemetryDashboard() {
         return next;
       });
 
-      const resLogs = await fetch("/api/system/logs");
-      const dataLogs = await resLogs.json();
+      const dataLogs = await apiRequest<string[]>("/api/system/logs");
       setLogs(dataLogs);
 
-      const resPres = await fetch("/api/system/presence");
-      const dataPres = await resPres.json();
+      const dataPres = await apiRequest<PresenceUser[]>("/api/system/presence");
       setPresence(dataPres);
     } catch (err) {
       console.error(err);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { K8sPod, OpenStackResource } from "../types";
 import { Server, Cloud, Compass, Plus, Trash, Scale, Disc, Network, HardDrive, Cpu, Power, ShieldAlert } from "lucide-react";
+import { apiRequest } from "../utils/api";
 
 export default function CloudInfrastructure() {
   const [pods, setPods] = useState<K8sPod[]>([]);
@@ -18,16 +19,13 @@ export default function CloudInfrastructure() {
 
   const fetchInfra = async () => {
     try {
-      const resPods = await fetch("/api/kubernetes/pods");
-      const dataPods = await resPods.json();
+      const dataPods = await apiRequest<K8sPod[]>("/api/kubernetes/pods");
       setPods(dataPods);
 
-      const resHpa = await fetch("/api/kubernetes/hpa");
-      const dataHpa = await resHpa.json();
+      const dataHpa = await apiRequest<any>("/api/kubernetes/hpa");
       setHpa(dataHpa);
 
-      const resCloud = await fetch("/api/openstack/resources");
-      const dataCloud = await resCloud.json();
+      const dataCloud = await apiRequest<OpenStackResource[]>("/api/openstack/resources");
       setCloudResources(dataCloud);
     } catch (err) {
       console.error(err);
@@ -43,15 +41,12 @@ export default function CloudInfrastructure() {
   const handleDeployPod = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch("/api/kubernetes/pods/deploy", {
+      await apiRequest("/api/kubernetes/pods/deploy", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newPodName, namespace: newPodNs })
       });
-      if (res.ok) {
-        setNewPodName("");
-        fetchInfra();
-      }
+      setNewPodName("");
+      fetchInfra();
     } catch (err) {
       console.error(err);
     }
@@ -59,12 +54,10 @@ export default function CloudInfrastructure() {
 
   const handleTerminatePod = async (name: string) => {
     try {
-      const res = await fetch(`/api/kubernetes/pods/${name}`, {
+      await apiRequest(`/api/kubernetes/pods/${name}`, {
         method: "DELETE"
       });
-      if (res.ok) {
-        fetchInfra();
-      }
+      fetchInfra();
     } catch (err) {
       console.error(err);
     }
@@ -73,9 +66,8 @@ export default function CloudInfrastructure() {
   const handleProvisionOpenStack = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch("/api/openstack/resources", {
+      await apiRequest("/api/openstack/resources", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: newOsName,
           type: newOsType,
@@ -83,10 +75,8 @@ export default function CloudInfrastructure() {
           sizeGb: newOsType === "Block Volume" ? newOsSize : undefined
         })
       });
-      if (res.ok) {
-        setNewOsName("");
-        fetchInfra();
-      }
+      setNewOsName("");
+      fetchInfra();
     } catch (err) {
       console.error(err);
     }
@@ -94,12 +84,10 @@ export default function CloudInfrastructure() {
 
   const handleDeallocateOpenStack = async (id: string) => {
     try {
-      const res = await fetch(`/api/openstack/resources/${id}`, {
+      await apiRequest(`/api/openstack/resources/${id}`, {
         method: "DELETE"
       });
-      if (res.ok) {
-        fetchInfra();
-      }
+      fetchInfra();
     } catch (err) {
       console.error(err);
     }
@@ -109,9 +97,8 @@ export default function CloudInfrastructure() {
     const updated = { ...hpa, ...updatedFields };
     setHpa(updated);
     try {
-      await fetch("/api/kubernetes/hpa", {
+      await apiRequest("/api/kubernetes/hpa", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updated)
       });
     } catch (err) {
